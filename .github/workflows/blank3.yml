@@ -24,7 +24,7 @@ jobs:
           docker run --rm \
             -v $(pwd)/zap/wrk:/zap/wrk:rw \
             zaproxy/zap-stable zap-api-scan.py \
-            -t "https://webhook.site/b46e54c8-4011-4f6f-820b-dc010dcd1e54" \
+            -t "https://bin.h00k.dev/d2f85f2a-3b2a-4a4e-916a-9694b82ba19d" \
             -f openapi \
             -z "-configfile /zap/wrk/options.prop" \
             -d 2>&1 | tee zap_output.log
