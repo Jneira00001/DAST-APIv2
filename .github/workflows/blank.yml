@@ -1,10 +1,10 @@
-name: Lab Petstore API Scan
+name: Lab Petstore API Scan v1
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # Se dispara al hacer commit o merge a main
+  workflow_dispatch: # Mantiene la opción de ejecutarlo manualmente
 
 jobs:
   zap_scan:
@@ -15,27 +15,23 @@ jobs:
       - name: Descargar código
         uses: actions/checkout@v4
 
-      - name: Preparar entorno
+      - name: Crear directorios ZAP
         run: |
-          mkdir -p ./zap/wrk
-          chmod 777 ./zap/wrk
+          mkdir -p $(pwd)/zap/wrk
+          chmod 777 $(pwd)/zap/wrk
 
-      - name: Ejecutar Escaneo ZAP
+      - name: Preparar archivo de opciones (Auth)
         env:
           MY_TOKEN: ${{ secrets.QA_API_TOKEN }}
         run: |
-          # 1. Inyectar token en el archivo de opciones
+          # Sustituimos la variable en el archivo físico
+          # Esto hace que el token pase de la memoria al archivo que leerá ZAP
           sed -i "s/\${MY_TOKEN}/$MY_TOKEN/g" options.prop
           cp options.prop ./zap/wrk/options.prop
+          echo "Configuración de headers preparada."
 
-          # 2. Crear Hook de Python para forzar log de headers
-          cat << 'EOF' > ./zap/wrk/my_hook.py
-          def sending_obj_request(zap, req):
-              api_key = req.getHeader("api_key")
-              print(f"[EVIDENCIA-AUTH] URL: {req.getRequestHeader().getURI()} | Header api_key: {api_key}")
-              return req
-          EOF
-
+      - name: Ejecutar Escaneo ZAP
+        run: |
           INPUT_FILE="apis.txt"
           TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
 
@@ -43,27 +39,29 @@ jobs:
             SWAGGER_URL=$(echo "$SWAGGER_URL" | xargs)
             if [ -z "$SWAGGER_URL" ]; then continue; fi
 
-            echo "Analizando: $SWAGGER_URL"
-            
-            # 3. Ejecutar ZAP (Reporte y Log)
+            echo "--> Analizando API: $SWAGGER_URL"
+            REPORT_NAME="reporte-petstore-${TIMESTAMP}.html"
+            LOG_NAME="zap-detalles-${TIMESTAMP}.log"
+
+            # Ejecutamos ZAP cargando el archivo de opciones con -z
+            # Redirigimos la salida a un log para poder validarlo después
             docker run --rm \
               -v $(pwd)/zap/wrk:/zap/wrk:rw \
               zaproxy/zap-stable zap-api-scan.py \
               -t "$SWAGGER_URL" \
               -f openapi \
-              -r "reporte-${TIMESTAMP}.html" \
-              --hook=/zap/wrk/my_hook.py \
+              -r "$REPORT_NAME" \
               -z "-configfile /zap/wrk/options.prop" \
-              2>&1 | tee "./zap/wrk/zap-log-${TIMESTAMP}.log"
+              -d \
+              > "./zap/wrk/$LOG_NAME" 2>&1 || echo "Escaneo finalizado con alertas."
 
           done < "$INPUT_FILE"
 
-      - name: Descargar Reportes y Logs
-        if: always() # Importante: descarga aunque el escaneo encuentre fallos
+      - name: Subir Reporte y Evidencia de Logs
+        if: always() # Se ejecuta aunque el escaneo falle, para ver por qué falló
         uses: actions/upload-artifact@v4
         with:
-          name: Evidencia-ZAP-${{ github.run_id }}
+          name: Resultados-ZAP-${{ github.sha }}
           path: |
             ./zap/wrk/*.html
             ./zap/wrk/*.log
-          retention-days: 5
