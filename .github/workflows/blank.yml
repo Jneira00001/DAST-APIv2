@@ -1,61 +1,22 @@
-name: Lab Petstore API Scan
-
-on:
-  workflow_dispatch:
-
-jobs:
-  zap_scan:
-    runs-on: ubuntu-latest
-    name: Escaneo de Petstore
-    
-    steps:
-      - name: Descargar código
-        uses: actions/checkout@v4
-
-      - name: Crear directorios ZAP
+- name: Ejecutar Escaneo ZAP
         run: |
-          mkdir -p $(pwd)/zap/wrk
-          chmod 777 $(pwd)/zap/wrk
-
-      - name: Preparar archivo de opciones
-        env:
-          MY_TOKEN: ${{ secrets.QA_API_TOKEN }}
-        run: |
-          # Reemplazamos la variable de entorno en el archivo físico antes de que entre al contenedor
-          sed -i "s/\${MY_TOKEN}/$MY_TOKEN/g" options.prop
+          # 1. Copiamos el archivo al directorio que Docker puede ver
           cp options.prop ./zap/wrk/options.prop
-
-      - name: Ejecutar Escaneo ZAP
-        run: |
+          
           INPUT_FILE="apis.txt"
           TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
 
           while IFS= read -r SWAGGER_URL || [ -n "$SWAGGER_URL" ]; do
-            SWAGGER_URL=$(echo "$SWAGGER_URL" | xargs)
-            if [ -z "$SWAGGER_URL" ]; then continue; fi
+            LOG_NAME="zap-trafico-${TIMESTAMP}.log"
 
-            echo "--> Analizando API: $SWAGGER_URL"
-            REPORT_NAME="reporte-petstore-${TIMESTAMP}.html"
-            LOG_NAME="zap-output-${TIMESTAMP}.log"
-
-            # Ejecutamos ZAP con -z para cargar el archivo de propiedades y -v para verbose
+            # 2. Ejecutamos pasando el archivo de propiedades
             docker run --rm \
               -v $(pwd)/zap/wrk:/zap/wrk:rw \
               zaproxy/zap-stable zap-api-scan.py \
               -t "$SWAGGER_URL" \
               -f openapi \
-              -r "$REPORT_NAME" \
+              -r "reporte.html" \
               -z "-configfile /zap/wrk/options.prop" \
-              -d \
-              > "./zap/wrk/$LOG_NAME" 2>&1 || echo "Escaneo finalizado."
+              2>&1 | tee "./zap/wrk/$LOG_NAME"
 
           done < "$INPUT_FILE"
-
-      - name: Subir Reporte y Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ZAP-Output-Artifacts
-          path: |
-            ./zap/wrk/*.html
-            ./zap/wrk/*.log
