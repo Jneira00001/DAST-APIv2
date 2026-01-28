@@ -1,10 +1,10 @@
-name: Lab Petstore API Scan v1
+name: Lab Petstore API Scan v1.1
 
 on:
   push:
     branches:
-      - main  # Se dispara al hacer commit o merge a main
-  workflow_dispatch: # Mantiene la opción de ejecutarlo manualmente
+      - main
+  workflow_dispatch:
 
 jobs:
   zap_scan:
@@ -25,7 +25,6 @@ jobs:
           MY_TOKEN: ${{ secrets.QA_API_TOKEN }}
         run: |
           # Sustituimos la variable en el archivo físico
-          # Esto hace que el token pase de la memoria al archivo que leerá ZAP
           sed -i "s/\${MY_TOKEN}/$MY_TOKEN/g" options.prop
           cp options.prop ./zap/wrk/options.prop
           echo "Configuración de headers preparada."
@@ -39,12 +38,14 @@ jobs:
             SWAGGER_URL=$(echo "$SWAGGER_URL" | xargs)
             if [ -z "$SWAGGER_URL" ]; then continue; fi
 
-            echo "--> Analizando API: $SWAGGER_URL"
+            echo "==========================================="
+            echo "INICIANDO ANÁLISIS: $SWAGGER_URL"
+            echo "==========================================="
+            
             REPORT_NAME="reporte-petstore-${TIMESTAMP}.html"
             LOG_NAME="zap-detalles-${TIMESTAMP}.log"
 
-            # Ejecutamos ZAP cargando el archivo de opciones con -z
-            # Redirigimos la salida a un log para poder validarlo después
+            # 'tee' envía la salida al archivo y a la consola de GitHub simultáneamente
             docker run --rm \
               -v $(pwd)/zap/wrk:/zap/wrk:rw \
               zaproxy/zap-stable zap-api-scan.py \
@@ -52,13 +53,16 @@ jobs:
               -f openapi \
               -r "$REPORT_NAME" \
               -z "-configfile /zap/wrk/options.prop" \
-              -d \
-              > "./zap/wrk/$LOG_NAME" 2>&1 || echo "Escaneo finalizado con alertas."
+              -d 2>&1 | tee "./zap/wrk/$LOG_NAME"
+
+            echo "==========================================="
+            echo "FIN DEL ANÁLISIS PARA: $SWAGGER_URL"
+            echo "==========================================="
 
           done < "$INPUT_FILE"
 
       - name: Subir Reporte y Evidencia de Logs
-        if: always() # Se ejecuta aunque el escaneo falle, para ver por qué falló
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Resultados-ZAP-${{ github.sha }}
