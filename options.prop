@@ -1,1 +1,16 @@
-conf
+# ==============================
+# ZAP Replacer – Auth Header
+# ==============================
+
+replacer.full_list(0).description=API Auth Header
+replacer.full_list(0).enabled=true
+replacer.full_list(0).matchtype=REQ_HEADER
+replacer.full_list(0).matchstr=api_key
+replacer.full_list(0).regex=false
+replacer.full_list(0).replacement=${MY_TOKEN}
+
+# ==============================
+# Logging (optional but recommended)
+# ==============================
+
+logger.level=DEBUG
