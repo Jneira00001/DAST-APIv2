@@ -1,4 +1,4 @@
-name: Scan DAST - API 
+name: Scan DAST -API 
 
 on:
   push:
