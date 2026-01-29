@@ -1,0 +1,69 @@
+name: Lab Petstore API Scan
+
+on:
+  workflow_dispatch: # Ejecutar manualmente
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: Escaneo de Petstore
+    
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Crear directorios ZAP
+        run: |
+          mkdir -p ./zap/wrk
+          chmod 777 ./zap/wrk
+
+      - name: Ejecutar Escaneo ZAP
+        env:
+          # Traemos el secreto que creaste en GitHub
+          MY_TOKEN: ${{ secrets.QA_API_TOKEN }}
+        run: |
+          INPUT_FILE="apis.txt"
+          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+
+          # --- CONFIGURACIÓN DE AUTH PARA PETSTORE ---
+          # Petstore espera el token en un header llamado "api_key".
+          # IMPORTANTE: Para tus clientes reales, cambia "api_key" por "Authorization"
+          # y "$MY_TOKEN" por "Bearer $MY_TOKEN".
+          
+          AUTH_CONFIG="-z replacer.full_list(0).description=auth \
+                       -z replacer.full_list(0).enabled=true \
+                       -z replacer.full_list(0).matchtype=REQ_HEADER \
+                       -z replacer.full_list(0).matchstr=api_key \
+                       -z replacer.full_list(0).regex=false \
+                       -z replacer.full_list(0).replacement=$MY_TOKEN"
+
+          # Leemos el archivo apis.txt
+          while IFS= read -r SWAGGER_URL || [ -n "$SWAGGER_URL" ]; do
+            
+            # Limpieza básica de la URL
+            SWAGGER_URL=$(echo "$SWAGGER_URL" | xargs)
+            if [ -z "$SWAGGER_URL" ]; then continue; fi
+
+            echo "--> Analizando API: $SWAGGER_URL"
+            
+            # Nombre del reporte
+            REPORT_NAME="reporte-petstore-${TIMESTAMP}.html"
+
+            # Ejecutamos ZAP
+            # Usamos zap-api-scan.py porque es una API
+            docker run --rm \
+              -v $(pwd)/zap/wrk:/zap/wrk:rw \
+              zaproxy/zap-stable zap-api-scan.py \
+              -t "$SWAGGER_URL" \
+              -f openapi \
+              -r "$REPORT_NAME" \
+              $AUTH_CONFIG \
+              || echo "Escaneo completado con alertas."
+
+          done < "$INPUT_FILE"
+
+      - name: Subir Reporte
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reporte-Petstore
+          path: ./zap/wrk/*.html
