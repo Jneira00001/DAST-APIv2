@@ -28,12 +28,14 @@ jobs:
           sed -i "s/\${MY_TOKEN}/$MY_TOKEN/g" options.prop
           cp options.prop ./zap/wrk/options.prop
           echo "Configuración de headers preparada."
+          
+      # Nuevo paso para obtener la fecha y hora
+      - name: Get Timestamp
+        id: timestamp
+        run: echo "TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
 
       - name: Ejecutar Escaneo ZAP
         run: |
-          INPUT_FILE="apis.txt"
-          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
-
           while IFS= read -r SWAGGER_URL || [ -n "$SWAGGER_URL" ]; do
             SWAGGER_URL=$(echo "$SWAGGER_URL" | xargs)
             if [ -z "$SWAGGER_URL" ]; then continue; fi
@@ -42,8 +44,8 @@ jobs:
             echo "INICIANDO ANÁLISIS: $SWAGGER_URL"
             echo "==========================================="
             
-            REPORT_NAME="reporte-petstore-${TIMESTAMP}.html"
-            LOG_NAME="zap-detalles-${TIMESTAMP}.log"
+            REPORT_NAME="reporte-petstore-${{ env.TIMESTAMP }}.html"
+            LOG_NAME="zap-detalles-${{ env.TIMESTAMP }}.log"
 
             # 'tee' envía la salida al archivo y a la consola de GitHub simultáneamente
             docker run --rm \
