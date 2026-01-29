@@ -36,7 +36,7 @@ jobs:
 
       - name: Ejecutar Escaneo ZAP
         run: |
-          INPUT_FILE="apis.txt
+          INPUT_FILE="apis.txt"
           while IFS= read -r SWAGGER_URL || [ -n "$SWAGGER_URL" ]; do
             SWAGGER_URL=$(echo "$SWAGGER_URL" | xargs)
             if [ -z "$SWAGGER_URL" ]; then continue; fi
