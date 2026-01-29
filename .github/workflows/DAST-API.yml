@@ -1,4 +1,4 @@
-name: Lab Petstore API Scan v2-Buena opcion
+name: Scan DAST - API 
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
-    name: Escaneo de Petstore
+    name: Escaneo de API Petstore
     
     steps:
       - name: Descargar código
