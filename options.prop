@@ -8,4 +8,3 @@ replacer.full_list(0).matchtype=REQ_HEADER
 replacer.full_list(0).matchstr=api_key
 replacer.full_list(0).regex=false
 replacer.full_list(0).replacement=${MY_TOKEN}
-replacer.full_list(0).addifnotfound=true
