@@ -255,7 +255,7 @@ El scanner OWASP ZAP genera para cada API:
 4. ✅ Revisar las especificaciones OpenAPI antes del escaneo
 5. ✅ Analizar y clasificar los hallazgos apropiadamente
 6. ✅ Integrar en el proceso de gestión de vulnerabilidades
-7. ✅ Combinar con SAST para cobertura completa de seguridad
+7. ✅ Combinar con SAST y SCA para cobertura completa de seguridad
 
 ### Notas sobre Autenticación:
 
