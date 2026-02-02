@@ -6,7 +6,7 @@
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF)
 ![API](https://img.shields.io/badge/API-Testing-green)
 
-Pipeline automatizado de **Dynamic Application Security Testing (DAST)** para APIs REST usando **OWASP ZAP** integrado con GitHub Actions. Este proyecto utiliza especificaciones **OpenAPI/Swagger** desde URLs para realizar pruebas de seguridad exhaustivas en APIs.
+Pipeline automatizado de **Dynamic Application Security Testing (DAST)** para APIs REST usando **OWASP ZAP** integrado con GitHub Actions. Este proyecto utiliza especificaciones **OpenAPI/Swagger** desde URLs para realizar pruebas de seguridad en APIs.
 
 ## 📋 Tabla de Contenidos
 
