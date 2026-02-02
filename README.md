@@ -183,7 +183,9 @@ https://petstore.swagger.io/v2/swagger.json
 https://api.ejemplo.com/openapi.json
 ```
 
-### 3. Subir Cambios
+### 3. Ejecutar Workflow
+
+Sube los cambios y el workflow se ejecutará automáticamente:
 
 ```bash
 git add apis.txt
@@ -191,17 +193,7 @@ git commit -m "Actualizar URLs de APIs a escanear"
 git push origin main
 ```
 
-### 4. Monitorear el Workflow
-
-Navega a la pestaña **Actions** en GitHub para monitorear el progreso del escaneo.
-
-### 5. Descargar Reportes
-
-Una vez completado:
-1. Ve a la ejecución del workflow
-2. Desplázate a la sección **Artifacts**
-3. Descarga `Resultados-ZAP-[timestamp].zip`
-4. Descomprime para ver reportes HTML y logs
+Los reportes generados estarán disponibles en la sección **Artifacts** del workflow.
 
 ---
 
